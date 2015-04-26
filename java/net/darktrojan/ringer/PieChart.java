@@ -20,7 +20,7 @@ import java.util.List;
 public class PieChart extends View {
 
 	RectF radiusRect, innerRadiusRect;
-	Path labelPath;
+	Path nowMarkerPath, labelPath0, labelPath1, labelPath2;
 	float w, h, cX, cY, radius, innerRadius, innerRadius2, hourAngle, minuteAngle, labelOffset;
 	int iconSize;
 	Paint piePaint, iconPaint, changePaint, vibratePaint, silentPaint, labelPaint;
@@ -94,11 +94,22 @@ public class PieChart extends View {
 		hourAngle = (float) (now.get(Calendar.HOUR_OF_DAY) * -15);
 		minuteAngle = now.get(Calendar.MINUTE) * -0.25f;
 
+		nowMarkerPath = new Path();
+		nowMarkerPath.moveTo(0, radius * -0.95f);
+		nowMarkerPath.lineTo(radius * 0.075f, radius * -0.825f);
+		nowMarkerPath.lineTo(radius * -0.075f, radius * -0.825f);
+		nowMarkerPath.close();
+
 		float labelRadius = radius * 0.55f;
 		labelPaint.setTextSize(radius * 0.125f);
-		labelPath = new Path();
-		labelPath.addArc(new RectF(-labelRadius, -labelRadius, labelRadius, labelRadius), 0, 360);
 		labelOffset = radius * -0.1f;
+
+		labelPath0 = new Path();
+		labelPath0.addCircle(0, 0, labelRadius, Path.Direction.CW);
+		labelPath1 = new Path();
+		labelPath1.addCircle(0, 0, labelRadius - 35, Path.Direction.CW);
+		labelPath2 = new Path();
+		labelPath2.addCircle(0, 0, labelRadius - 70, Path.Direction.CW);
 
 		ArrayList<ModeChange> changes = ChangeManager.mChanges;
 		int size = changes.size();
@@ -150,6 +161,7 @@ public class PieChart extends View {
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		canvas.translate(cX, cY);
+		canvas.save();
 		canvas.rotate(hourAngle + minuteAngle);
 
 		for (int i = 0; i < this.arcs.size(); i++) {
@@ -163,16 +175,18 @@ public class PieChart extends View {
 		}
 
 		canvas.rotate(45);
-		canvas.drawTextOnPath("EVENING", labelPath, 0, labelOffset, labelPaint);
+		canvas.drawTextOnPath("EVENING", labelPath1, 0, labelOffset - 35, labelPaint);
 
 		canvas.rotate(90);
-		canvas.drawTextOnPath("NIGHT", labelPath, 0, labelOffset, labelPaint);
+		canvas.drawTextOnPath("NIGHT", labelPath2, 0, labelOffset - 70, labelPaint);
 
 		canvas.rotate(90);
-		canvas.drawTextOnPath("MORNING", labelPath, 0, labelOffset, labelPaint);
+		canvas.drawTextOnPath("MORNING", labelPath1, 0, labelOffset - 35, labelPaint);
 
 		canvas.rotate(90);
-		canvas.drawTextOnPath("AFTERNOON", labelPath, 0, labelOffset, labelPaint);
-		canvas.rotate(45);
+		canvas.drawTextOnPath("AFTERNOON", labelPath0, 0, labelOffset, labelPaint);
+
+		canvas.restore();
+		canvas.drawPath(nowMarkerPath, labelPaint);
 	}
 }
