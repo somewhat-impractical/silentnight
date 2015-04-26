@@ -2,10 +2,10 @@ package net.darktrojan.ringer;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -20,18 +20,18 @@ import java.util.List;
 public class PieChart extends View {
 
 	RectF radiusRect, innerRadiusRect;
-	float w, h, cX, cY, radius, innerRadius, innerRadius2, halfRadius, angle, minuteAngle;
+	Path labelPath;
+	float w, h, cX, cY, radius, innerRadius, innerRadius2, hourAngle, minuteAngle, labelOffset;
 	int iconSize;
-	Paint piePaint, iconPaint, changePaint, vibratePaint, silentPaint;
-	Drawable sun, moon, sunrise, sunset;
-	List<Path> arcs = new ArrayList<Path>();
-	List<Paint> colours = new ArrayList<Paint>();
+	Paint piePaint, iconPaint, changePaint, vibratePaint, silentPaint, labelPaint;
+	List<Path> arcs = new ArrayList<>();
+	List<Paint> colours = new ArrayList<>();
 
 	public PieChart(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
 		piePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		piePaint.setColor(0xFFFFFFFF);
+		piePaint.setColor(Color.WHITE);
 		piePaint.setStyle(Paint.Style.STROKE);
 		piePaint.setStrokeWidth(3f);
 
@@ -51,10 +51,9 @@ public class PieChart extends View {
 		silentPaint.setColor(0xFFFF6600);
 		silentPaint.setStyle(Paint.Style.FILL);
 
-		this.sun = context.getResources().getDrawable(R.drawable.ic_sun);
-		this.moon = context.getResources().getDrawable(R.drawable.ic_moon);
-		this.sunrise = context.getResources().getDrawable(R.drawable.ic_sunrise);
-		this.sunset = context.getResources().getDrawable(R.drawable.ic_sunset);
+		labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		labelPaint.setColor(Color.WHITE);
+		labelPaint.setTextAlign(Paint.Align.CENTER);
 	}
 
 	@Override
@@ -85,7 +84,6 @@ public class PieChart extends View {
 		radius = Math.min(cX, cY) - 4;
 		innerRadius = radius * 0.9f;
 		innerRadius2 = radius * .85f;
-		halfRadius = radius * 0.55f;
 
 		radiusRect = new RectF(-radius, -radius, radius, radius);
 		innerRadiusRect = new RectF(-innerRadius, -innerRadius, innerRadius, innerRadius);
@@ -93,13 +91,15 @@ public class PieChart extends View {
 		iconSize = (int) (radius * 0.18);
 
 		Calendar now = Calendar.getInstance();
-		angle = (float) (now.get(Calendar.HOUR_OF_DAY) * -15);
+		hourAngle = (float) (now.get(Calendar.HOUR_OF_DAY) * -15);
 		minuteAngle = now.get(Calendar.MINUTE) * -0.25f;
 
-		loadArcs();
-	}
+		float labelRadius = radius * 0.55f;
+		labelPaint.setTextSize(radius * 0.125f);
+		labelPath = new Path();
+		labelPath.addArc(new RectF(-labelRadius, -labelRadius, labelRadius, labelRadius), 0, 360);
+		labelOffset = radius * -0.1f;
 
-	void loadArcs() {
 		ArrayList<ModeChange> changes = ChangeManager.mChanges;
 		int size = changes.size();
 
@@ -150,7 +150,7 @@ public class PieChart extends View {
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		canvas.translate(cX, cY);
-		canvas.rotate(angle + minuteAngle);
+		canvas.rotate(hourAngle + minuteAngle);
 
 		for (int i = 0; i < this.arcs.size(); i++) {
 			canvas.drawPath(this.arcs.get(i), this.colours.get(i));
@@ -162,32 +162,17 @@ public class PieChart extends View {
 			canvas.rotate(15.0f);
 		}
 
-		canvas.save();
-		canvas.rotate(-angle - minuteAngle, 0, halfRadius);
-		// canvas.drawRect(-iconSize, halfRadius - iconSize, iconSize, halfRadius + iconSize, iconPaint);
-		sun.setBounds(-iconSize, (int) halfRadius - iconSize, iconSize, (int) halfRadius + iconSize);
-		sun.draw(canvas);
-		canvas.restore();
+		canvas.rotate(45);
+		canvas.drawTextOnPath("EVENING", labelPath, 0, labelOffset, labelPaint);
 
-		canvas.save();
-		canvas.rotate(-angle - minuteAngle, halfRadius, 0);
-		//canvas.drawRect(halfRadius -iconSize, -iconSize, halfRadius + iconSize, iconSize, iconPaint);
-		sunrise.setBounds((int) halfRadius - iconSize, -iconSize, (int) halfRadius + iconSize, iconSize);
-		sunrise.draw(canvas);
-		canvas.restore();
+		canvas.rotate(90);
+		canvas.drawTextOnPath("NIGHT", labelPath, 0, labelOffset, labelPaint);
 
-		canvas.save();
-		canvas.rotate(-angle - minuteAngle, 0, -halfRadius);
-		//canvas.drawRect(-iconSize, -halfRadius - iconSize, iconSize, -halfRadius + iconSize, iconPaint);
-		moon.setBounds(-iconSize, (int) -halfRadius - iconSize, iconSize, (int) -halfRadius + iconSize);
-		moon.draw(canvas);
-		canvas.restore();
+		canvas.rotate(90);
+		canvas.drawTextOnPath("MORNING", labelPath, 0, labelOffset, labelPaint);
 
-		canvas.save();
-		canvas.rotate(-angle - minuteAngle, -halfRadius, 0);
-		//canvas.drawRect(-halfRadius -iconSize, -iconSize, -halfRadius + iconSize, iconSize, iconPaint);
-		sunset.setBounds((int) -halfRadius - iconSize, -iconSize, (int) -halfRadius + iconSize, iconSize);
-		sunset.draw(canvas);
-		canvas.restore();
+		canvas.rotate(90);
+		canvas.drawTextOnPath("AFTERNOON", labelPath, 0, labelOffset, labelPaint);
+		canvas.rotate(45);
 	}
 }
