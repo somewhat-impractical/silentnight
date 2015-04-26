@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Silent Night</string>
+    <string name="change_cancelled_toast">Pending changes cancelled</string>
+	<string name="change_set_toast">Set to change to %1$s at %2$s</string>    
+</resources>
