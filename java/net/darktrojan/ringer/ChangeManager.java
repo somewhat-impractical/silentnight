@@ -3,10 +3,12 @@ package net.darktrojan.ringer;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.media.AudioManager;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.widget.Toast;
@@ -16,22 +18,31 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 
-public class ChangeManager {
+public class ChangeManager extends BroadcastReceiver {
+
+	static final String LOG_TAG = "ChangeManager";
 
 	static final String CHANGE_FILE = "changes";
-
 	static final String PREF_FILE = "prefs";
 	static final String RUNNING = "running";
 
 	static String[] ringer_modes;
 
-	static ArrayList<ModeChange> mChanges = new ArrayList<ModeChange>();
+	static ArrayList<ModeChange> mChanges = new ArrayList<>();
+
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		Log.d(LOG_TAG, "Setting next change");
+		if (ChangeManager.getIsRunning(context)) {
+			ChangeManager.setNextChange(context);
+		}
+	}
 
 	static void setChangeSchedule(ModeChange[] changes) {
 		mChanges.clear();
 
 		for (ModeChange mc : changes) {
-			Log.v("ChangeManager", mc.toString());
+			Log.v(LOG_TAG, mc.toString());
 			mChanges.add(mc);
 		}
 	}
@@ -46,7 +57,7 @@ public class ChangeManager {
 	private static void setChange(Context context, long millis, int mode) {
 		Calendar c = Calendar.getInstance();
 		c.setTimeInMillis(millis);
-		Log.d("ChangeManager", "Setting up change to " + ringer_modes[mode].toLowerCase() + " at " + calendarToString(c));
+		Log.d(LOG_TAG, "Setting up change to " + ringer_modes[mode].toLowerCase() + " at " + calendarToString(c));
 
 		Resources resources = context.getResources();
 		String[] ringer_modes = context.getResources().getStringArray(R.array.ringer_modes);
@@ -70,38 +81,36 @@ public class ChangeManager {
 		}
 
 		Calendar now = Calendar.getInstance();
+		ModeChange previousChange = null;
 		ModeChange nextChange = null;
 		long nextChangeTime = -1;
 
-		for (ModeChange mc : mChanges) {
-			Calendar changeTime = Calendar.getInstance();
-			changeTime.set(Calendar.HOUR_OF_DAY, mc.hour);
-			changeTime.set(Calendar.MINUTE, mc.minute);
-			changeTime.set(Calendar.SECOND, 0);
-			changeTime.set(Calendar.MILLISECOND, 0);
-			Log.v("ChangeManager", "Checking " + calendarToString(changeTime));
-			if (changeTime.after(now)) {
-				nextChange = mc;
-				nextChangeTime = changeTime.getTimeInMillis();
-				break;
-			}
-		}
-
-		if (nextChange == null) {
+		for (int i = -1; i < 2; i++) {
 			for (ModeChange mc : mChanges) {
 				Calendar changeTime = Calendar.getInstance();
 				changeTime.set(Calendar.HOUR_OF_DAY, mc.hour);
 				changeTime.set(Calendar.MINUTE, mc.minute);
 				changeTime.set(Calendar.SECOND, 0);
 				changeTime.set(Calendar.MILLISECOND, 0);
-				changeTime.add(Calendar.DAY_OF_MONTH, 1);
-				Log.v("ChangeManager", "Checking " + calendarToString(changeTime));
-				if (changeTime.after(now)) {
+				changeTime.add(Calendar.DAY_OF_MONTH, i);
+				Log.v(LOG_TAG, "Checking " + calendarToString(changeTime));
+				if (changeTime.before(now)) {
+					previousChange = mc;
+				} else if (changeTime.after(now)) {
 					nextChange = mc;
 					nextChangeTime = changeTime.getTimeInMillis();
 					break;
 				}
 			}
+			if (nextChange != null) {
+				break;
+			}
+		}
+
+		if (previousChange != null) {
+			Log.d(LOG_TAG, "Changing to " + ringer_modes[previousChange.mode].toLowerCase());
+			AudioManager am = (AudioManager) (context.getSystemService(Context.AUDIO_SERVICE));
+			am.setRingerMode(previousChange.mode);
 		}
 
 		if (nextChange != null) {
@@ -110,7 +119,7 @@ public class ChangeManager {
 	}
 
 	static void cancelChanges(Context context) {
-		Log.d("ChangeManager", "Cancelling pending change");
+		Log.d(LOG_TAG, "Cancelling pending change");
 
 		Intent cancelIntent;
 		PendingIntent pendingIntent;
@@ -136,7 +145,7 @@ public class ChangeManager {
 		editor.putString(CHANGE_FILE, sb.toString());
 		editor.apply();
 
-		Log.v("ChangeManager", "Saving to prefs: " + sb.toString());
+		Log.v(LOG_TAG, "Saving to prefs: " + sb.toString());
 	}
 
 	static void readFromPref(Context context) {
@@ -145,7 +154,7 @@ public class ChangeManager {
 		SharedPreferences prefs = context.getSharedPreferences(CHANGE_FILE, 0);
 		String data = prefs.getString(CHANGE_FILE, "1,7,30\n2,8,30\n1,22,30\n0,23,30");
 
-		Log.v("ChangeManager", "Pref data: " + data);
+		Log.v(LOG_TAG, "Pref data: " + data);
 
 		String[] lines = data.trim().split("\n");
 		ModeChange[] changes = new ModeChange[lines.length];

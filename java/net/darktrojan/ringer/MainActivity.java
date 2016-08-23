@@ -18,6 +18,8 @@ import net.darktrojan.ringer.ChangeManager.ModeChange;
 
 public class MainActivity extends Activity {
 
+	static final String LOG_TAG = "MainActivity";
+
 	static final String INTENT_CHANGE_MODE = "net.darktrojan.ringer.CHANGE_MODE";
 	static final String INTENT_EXTRA_NEW_MODE = "newMode";
 
@@ -64,7 +66,7 @@ public class MainActivity extends Activity {
 
 		observer = new DataSetObserver() {
 			public void onChanged() {
-				Log.v("MainActivity", "Dataset changed");
+				Log.v(LOG_TAG, "Dataset changed");
 				PieChart pieChart = (PieChart) (MainActivity.this.findViewById(R.id.pie_chart));
 				pieChart.refresh();
 			}

@@ -19,6 +19,8 @@ import java.util.List;
 
 public class PieChart extends View {
 
+	final static String LOG_TAG = "PieChart";
+
 	RectF radiusRect, innerRadiusRect;
 	Path nowMarkerPath, labelPath0, labelPath1, labelPath2;
 	float w, h, cX, cY, radius, innerRadius, innerRadius2, hourAngle, minuteAngle, labelOffset;
@@ -126,7 +128,7 @@ public class PieChart extends View {
 
 		for (ModeChange change : changes) {
 			end = change;
-//			Log.d("PieChart", "from " + start + " to " + end);
+//			Log.d(LOG_TAG, "from " + start + " to " + end);
 			if (start.mode != AudioManager.RINGER_MODE_NORMAL && (end.hour != start.hour || end.minute != start.minute)) {
 				arcs.add(getTimeArc(start.hour, start.minute, end.hour, end.minute));
 				colours.add(start.mode == AudioManager.RINGER_MODE_SILENT ? silentPaint : vibratePaint);
@@ -152,7 +154,7 @@ public class PieChart extends View {
 	}
 
 	void refresh() {
-		Log.v("PieChart", "Chart refreshed");
+		Log.v(LOG_TAG, "Chart refreshed");
 		loadChart();
 		invalidate();
 	}

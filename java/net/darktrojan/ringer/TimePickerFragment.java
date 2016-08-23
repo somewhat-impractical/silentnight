@@ -14,6 +14,8 @@ import net.darktrojan.ringer.ChangeManager.ModeChange;
 import java.util.Calendar;
 
 public class TimePickerFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
+	static final String LOG_TAG = "TimePickerFragment";
+
 	ChangeAdapter ca = null;
 	ModeChange mc = null;
 
@@ -40,7 +42,7 @@ public class TimePickerFragment extends DialogFragment implements TimePickerDial
 	}
 
 	public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-		Log.v("TimePickerFragment", "onTimeSet");
+		Log.v(LOG_TAG, "onTimeSet");
 		if (this.mc != null) {
 			this.mc.hour = hourOfDay;
 			this.mc.minute = minute;
